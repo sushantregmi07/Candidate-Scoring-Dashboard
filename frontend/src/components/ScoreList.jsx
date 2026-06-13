@@ -1,4 +1,4 @@
-export default function ScoreList({ scores }) {
+export default function ScoreList({ scores, isAdmin = false }) {
   if (!scores || scores.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-5">
@@ -23,6 +23,11 @@ export default function ScoreList({ scores }) {
               <th className="text-left py-2 pr-4 text-xs font-medium text-gray-500">
                 Score
               </th>
+              {isAdmin && (
+                <th className="text-left py-2 pr-4 text-xs font-medium text-gray-500">
+                  Reviewer
+                </th>
+              )}
               <th className="text-left py-2 pr-4 text-xs font-medium text-gray-500">
                 Note
               </th>
@@ -42,6 +47,17 @@ export default function ScoreList({ scores }) {
                     {s.score}
                   </span>
                 </td>
+                {isAdmin && (
+                  <td className="py-2 pr-4 text-gray-600 text-xs">
+                    <span className="font-medium text-gray-700">
+                      {s.reviewer_username || "Unknown"}
+                    </span>
+                    <br />
+                    <span className="text-gray-400">
+                      {s.reviewer_email}
+                    </span>
+                  </td>
+                )}
                 <td className="py-2 pr-4 text-gray-600">
                   {s.note || <span className="text-gray-300">&mdash;</span>}
                 </td>

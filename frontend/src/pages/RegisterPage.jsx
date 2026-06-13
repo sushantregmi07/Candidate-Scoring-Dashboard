@@ -1,16 +1,16 @@
 import { useState } from "react";
-import { useNavigate, Navigate, Link, useLocation } from "react-router-dom";
+import { useNavigate, Navigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { register } from "../api/auth";
 
-export default function LoginPage() {
-  const { user, login } = useAuth();
+export default function RegisterPage() {
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const justRegistered = location.state?.registered;
 
   if (user) return <Navigate to="/candidates" replace />;
 
@@ -19,10 +19,15 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      await login(email, password);
-      navigate("/candidates", { replace: true });
+      await register(username, email, password);
+      navigate("/login", {
+        replace: true,
+        state: { registered: true },
+      });
     } catch (err) {
-      setError(err.response?.data?.detail || "Login failed. Please try again.");
+      setError(
+        err.response?.data?.detail || "Registration failed. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -33,17 +38,11 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
           <h1 className="text-2xl font-bold text-center text-gray-900 mb-1">
-            TechKraft Recruiter
+            Create Account
           </h1>
           <p className="text-sm text-center text-gray-500 mb-6">
-            Sign in to access the scoring dashboard
+            Register as a reviewer to start scoring candidates
           </p>
-
-          {justRegistered && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
-              Account created successfully! Sign in to continue.
-            </div>
-          )}
 
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
@@ -54,6 +53,19 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
+                Username
+              </label>
+              <input
+                type="text"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                placeholder="John Doe"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Email
               </label>
               <input
@@ -62,7 +74,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                placeholder="you@techkraft.com"
+                placeholder="you@example.com"
               />
             </div>
             <div>
@@ -72,9 +84,11 @@ export default function LoginPage() {
               <input
                 type="password"
                 required
+                minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                placeholder="Minimum 8 characters"
               />
             </div>
             <button
@@ -82,22 +96,18 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? "Creating account..." : "Create Account"}
             </button>
           </form>
 
           <p className="mt-5 text-sm text-center text-gray-500">
-            Don&apos;t have an account?{" "}
+            Already have an account?{" "}
             <Link
-              to="/register"
+              to="/login"
               className="text-indigo-600 font-medium hover:underline"
             >
-              Register
+              Sign in
             </Link>
-          </p>
-
-          <p className="mt-3 text-xs text-center text-gray-400">
-            Demo: admin@techkraft.com / admin123
           </p>
         </div>
       </div>

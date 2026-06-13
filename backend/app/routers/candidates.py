@@ -13,6 +13,7 @@ from app.schemas import (
     CandidateListResponse,
     CandidateOut,
     InternalNotesUpdate,
+    ScoreAdminOut,
     ScoreCreate,
     ScoreOut,
 )
@@ -68,9 +69,25 @@ async def get_candidate(
     else:
         candidate_data = CandidateOut.model_validate(candidate).model_dump()
 
-    candidate_data["scores"] = [
-        ScoreOut.model_validate(s).model_dump() for s in scores
-    ]
+    if current_user.role == "admin":
+        candidate_data["scores"] = [
+            {
+                **ScoreAdminOut.model_validate(s).model_dump(),
+                "reviewer_username": s.reviewer.username if s.reviewer else None,
+                "reviewer_email": s.reviewer.email if s.reviewer else None,
+            }
+            for s in scores
+        ]
+    else:
+        candidate_data["scores"] = [
+            ScoreOut.model_validate(s).model_dump() for s in scores
+        ]
+
+    user_summary = await candidate_service.get_user_summary(
+        db, candidate_id, current_user.id
+    )
+    candidate_data["ai_summary"] = user_summary
+
     return candidate_data
 
 
@@ -110,5 +127,17 @@ async def generate_summary(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    candidate = await candidate_service.generate_ai_summary(db, candidate_id)
-    return AISummaryOut(candidate_id=candidate.id, summary=candidate.ai_summary)
+    summary = await candidate_service.generate_ai_summary(
+        db, candidate_id, current_user
+    )
+    return AISummaryOut(candidate_id=summary.candidate_id, summary=summary.summary)
+
+
+@router.delete("/{candidate_id}", status_code=200)
+async def archive_candidate(
+    candidate_id: str,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(require_admin),
+):
+    candidate = await candidate_service.soft_delete_candidate(db, candidate_id)
+    return {"detail": "Candidate archived", "id": candidate.id}

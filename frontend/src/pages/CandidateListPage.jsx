@@ -48,7 +48,7 @@ export default function CandidateListPage() {
     if (skill) params.skill = skill;
     if (keyword) params.keyword = keyword;
     params.page = page;
-    params.page_size = 20;
+    params.page_size = 10;
 
     listCandidates(params)
       .then((res) => {

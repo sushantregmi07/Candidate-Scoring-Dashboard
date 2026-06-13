@@ -29,3 +29,8 @@ export async function generateSummary(candidateId) {
   const { data } = await client.post(`/candidates/${candidateId}/summary`);
   return data;
 }
+
+export async function archiveCandidate(candidateId) {
+  const { data } = await client.delete(`/candidates/${candidateId}`);
+  return data;
+}

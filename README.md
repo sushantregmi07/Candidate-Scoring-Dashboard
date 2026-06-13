@@ -38,11 +38,11 @@ docker-compose up --build
 
 ### Default Accounts (Seeded)
 
-| Role     | Email                  | Password     |
-|----------|------------------------|--------------|
-| Admin    | admin@techkraft.com    | admin123     |
-| Reviewer | alice@techkraft.com    | reviewer123  |
-| Reviewer | bob@techkraft.com      | reviewer123  |
+| Role     | Username       | Email                  | Password     |
+|----------|----------------|------------------------|--------------|
+| Admin    | Admin User     | admin@techkraft.com    | admin123     |
+| Reviewer | Alice Rivera   | alice@techkraft.com    | reviewer123  |
+| Reviewer | Bob Martinez   | bob@techkraft.com      | reviewer123  |
 
 ### Running Tests
 
@@ -59,7 +59,7 @@ docker exec candidatescoringdashboard-backend-1 python -m pytest tests/ -v
 ```bash
 curl -X POST http://localhost:8000/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"email": "newuser@example.com", "password": "secret123"}'
+  -d '{"username": "Jane Doe", "email": "jane@example.com", "password": "secret1234"}'
 ```
 
 ### Login
@@ -104,6 +104,15 @@ curl -X PATCH http://localhost:8000/candidates/<candidate_id>/notes \
   -H "Content-Type: application/json" \
   -d '{"notes": "Fast-track to final round"}'
 ```
+
+### Archive a candidate (admin only — soft delete)
+
+```bash
+curl -X DELETE http://localhost:8000/candidates/<candidate_id> \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+This sets the candidate's status to `archived` and records a `deleted_at` timestamp. The row is **not** hard-deleted — it is excluded from listing queries via a `WHERE deleted_at IS NULL` filter.
 
 ---
 
@@ -171,17 +180,17 @@ The database uses its indexes to find matching rows, counts them without materia
 
 **Context:** The system requires two roles (reviewer, admin) with different permissions. The assignment explicitly caps the grade if the client can set its own role during registration.
 
-**Decision:** Stateless JWT tokens using python-jose. The `UserRegister` Pydantic schema accepts only `email` and `password` — no `role` field exists on the schema at all. The backend hardcodes `role="reviewer"` in the service layer. Admin accounts are created only through the database seed.
+**Decision:** Stateless JWT tokens using python-jose. The `UserRegister` Pydantic schema accepts only `username`, `email`, and `password` — no `role` field exists on the schema at all. The backend hardcodes `role="reviewer"` in the service layer. Admin accounts are created only through the database seed.
 
 **Trade-off:** There is no admin self-registration flow. In a production system, admin provisioning would be handled through a separate admin panel or CLI tool. For this assignment, the seeded admin account demonstrates the pattern without introducing unnecessary complexity.
 
-### ADR 3: Mock AI Summary as an Async Column Update
+### ADR 3: Per-User AI Summaries via Separate Table
 
-**Context:** The assignment requires simulating an LLM call with a 2-second delay. We needed to decide between a separate `summaries` table (normalized) or storing the result directly on the candidate.
+**Context:** The assignment requires simulating an LLM call with a 2-second delay. Initially the summary was a single column on the `candidates` table, but this created a data leakage issue: a reviewer's generated summary reflected scores from other reviewers they shouldn't see. A reviewer who scored Technical=3 would see a summary saying "average 2.0" because another reviewer scored Technical=1.
 
-**Decision:** The AI summary is stored as an `ai_summary` TEXT column on the `candidates` table. The endpoint uses `asyncio.sleep(2)` to simulate latency, then generates a template-based summary from candidate data and updates the column in place.
+**Decision:** Summaries are stored in a dedicated `summaries` table keyed by `(candidate_id, user_id)`. Each user gets their own independent summary. Reviewer summaries are generated only from that reviewer's scores. Admin summaries aggregate all scores with per-category breakdowns showing how many reviewers contributed to each category.
 
-**Trade-off:** We accepted data denormalization (summary lives on the candidate row) in exchange for eliminating a JOIN on every candidate detail query. If we needed to track summary history or multiple summaries per candidate, a separate table would be warranted. For a single latest-summary use case, the column approach is simpler and faster.
+**Trade-off:** This adds one query per candidate detail load (to fetch the user's summary) and stores multiple summary rows per candidate instead of one. The extra storage and query cost is negligible, and the data isolation correctly mirrors the RBAC boundaries already enforced on score visibility.
 
 ---
 
@@ -194,5 +203,5 @@ Building this project reinforced the importance of pushing computation to the da
 ## Limitations
 
 - **SSE streaming** (`GET /candidates/{id}/stream`) is not implemented. The plan accounted for it as a stretch goal using `asyncio.Queue` per candidate, but time was prioritized on core requirements.
-- **No admin registration UI** — admin accounts can only be created via the database seed script.
+- **No admin registration UI** — admin accounts can only be created via the database seed script. In production, admin provisioning would use a separate CLI tool or admin panel.
 - **SQLite single-writer** — adequate for an internal tool but would need to be swapped for PostgreSQL under concurrent write load.

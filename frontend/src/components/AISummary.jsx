@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { generateSummary } from "../api/candidates";
 
-export default function AISummary({ candidateId, existingSummary, onUpdated }) {
+export default function AISummary({ candidateId, existingSummary, onUpdated, isAdmin = false }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -70,9 +70,16 @@ export default function AISummary({ candidateId, existingSummary, onUpdated }) {
       )}
 
       {!loading && !error && existingSummary && (
-        <p className="text-sm text-gray-700 leading-relaxed bg-gray-50 rounded-lg p-4">
-          {existingSummary}
-        </p>
+        <div>
+          <p className="text-sm text-gray-700 leading-relaxed bg-gray-50 rounded-lg p-4">
+            {existingSummary}
+          </p>
+          {isAdmin && (
+            <p className="text-xs text-gray-400 mt-2 italic">
+              Admin view — this summary aggregates scores from all reviewers.
+            </p>
+          )}
+        </div>
       )}
 
       {!loading && !error && !existingSummary && (

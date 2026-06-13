@@ -10,6 +10,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.dialects.sqlite import JSON
 from sqlalchemy.orm import relationship
@@ -29,6 +30,7 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(String(36), primary_key=True, default=_new_uuid)
+    username = Column(String(255), nullable=False, default="")
     email = Column(String(255), unique=True, nullable=False, index=True)
     hashed_password = Column(String(255), nullable=False)
     role = Column(
@@ -59,7 +61,6 @@ class Candidate(Base):
     )
     skills = Column(JSON, nullable=False, default=list)
     internal_notes = Column(Text, nullable=True)
-    ai_summary = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), default=_utcnow, nullable=False)
     deleted_at = Column(DateTime(timezone=True), nullable=True)
 
@@ -86,3 +87,20 @@ class Score(Base):
 
     candidate = relationship("Candidate", back_populates="scores")
     reviewer = relationship("User", back_populates="scores")
+
+
+class Summary(Base):
+    __tablename__ = "summaries"
+    __table_args__ = (
+        UniqueConstraint("candidate_id", "user_id", name="uq_summary_candidate_user"),
+    )
+
+    id = Column(String(36), primary_key=True, default=_new_uuid)
+    candidate_id = Column(
+        String(36), ForeignKey("candidates.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id = Column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    summary = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=_utcnow, nullable=False)

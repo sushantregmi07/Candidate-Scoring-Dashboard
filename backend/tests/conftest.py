@@ -58,7 +58,7 @@ async def client():
 async def admin_token(client: AsyncClient):
     await client.post(
         "/auth/register",
-        json={"email": "admin-fixture@test.com", "password": "password123"},
+        json={"username": "Admin Fixture", "email": "admin-fixture@test.com", "password": "password123"},
     )
     async with TestSession() as session:
         from sqlalchemy import update
@@ -82,7 +82,7 @@ async def admin_token(client: AsyncClient):
 async def reviewer_token(client: AsyncClient):
     await client.post(
         "/auth/register",
-        json={"email": "reviewer-a@test.com", "password": "password123"},
+        json={"username": "Reviewer A", "email": "reviewer-a@test.com", "password": "password123"},
     )
     resp = await client.post(
         "/auth/login",
@@ -95,7 +95,7 @@ async def reviewer_token(client: AsyncClient):
 async def reviewer_b_token(client: AsyncClient):
     await client.post(
         "/auth/register",
-        json={"email": "reviewer-b@test.com", "password": "password123"},
+        json={"username": "Reviewer B", "email": "reviewer-b@test.com", "password": "password123"},
     )
     resp = await client.post(
         "/auth/login",

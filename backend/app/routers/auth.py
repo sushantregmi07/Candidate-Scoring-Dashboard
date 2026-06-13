@@ -20,6 +20,7 @@ async def register(payload: UserRegister, db: AsyncSession = Depends(get_db)):
         )
 
     user = User(
+        username=payload.username,
         email=payload.email,
         hashed_password=hash_password(payload.password),
         role="reviewer",

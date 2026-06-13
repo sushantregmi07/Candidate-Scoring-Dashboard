@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, Link } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
 import CandidateListPage from "./pages/CandidateListPage";
 import CandidateDetailPage from "./pages/CandidateDetailPage";
 
@@ -44,6 +45,7 @@ export default function App() {
       <Navbar />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route
           path="/candidates"
           element={

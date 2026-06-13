@@ -8,8 +8,9 @@ from pydantic import BaseModel, EmailStr, Field
 
 class UserRegister(BaseModel):
     """Registration payload — intentionally has NO role field."""
+    username: str = Field(..., min_length=1, max_length=255)
     email: EmailStr
-    password: str = Field(..., min_length=6)
+    password: str = Field(..., min_length=8)
 
 
 class UserLogin(BaseModel):
@@ -24,6 +25,7 @@ class TokenResponse(BaseModel):
 
 class UserOut(BaseModel):
     id: str
+    username: str
     email: str
     role: str
     created_at: datetime
@@ -43,7 +45,6 @@ class CandidateBase(BaseModel):
 
 class CandidateOut(CandidateBase):
     id: str
-    ai_summary: Optional[str] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -84,6 +85,12 @@ class ScoreOut(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class ScoreAdminOut(ScoreOut):
+    """Extended score view for admins — includes who submitted the score."""
+    reviewer_username: Optional[str] = None
+    reviewer_email: Optional[str] = None
 
 
 # ── AI Summary ───────────────────────────────────────────────────────────────

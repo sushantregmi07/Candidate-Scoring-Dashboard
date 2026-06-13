@@ -11,23 +11,30 @@ const CATEGORIES = [
 
 export default function ScoreForm({ candidateId, onScoreAdded }) {
   const [category, setCategory] = useState(CATEGORIES[0]);
-  const [score, setScore] = useState(3);
+  const [score, setScore] = useState(null);
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const canSubmit = category && score !== null && !loading;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setSuccess("");
     try {
       await submitScore(candidateId, {
         category,
         score,
         note: note || undefined,
       });
+      setScore(null);
       setNote("");
-      setScore(3);
+      setCategory(CATEGORIES[0]);
+      setSuccess("Score submitted successfully");
+      setTimeout(() => setSuccess(""), 2000);
       onScoreAdded();
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to submit score");
@@ -43,6 +50,11 @@ export default function ScoreForm({ candidateId, onScoreAdded }) {
       {error && (
         <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
           {error}
+        </div>
+      )}
+      {success && (
+        <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded text-sm text-green-700">
+          {success}
         </div>
       )}
 
@@ -100,8 +112,8 @@ export default function ScoreForm({ candidateId, onScoreAdded }) {
         </div>
         <button
           type="submit"
-          disabled={loading}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+          disabled={!canSubmit}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {loading ? "Submitting..." : "Submit Score"}
         </button>
